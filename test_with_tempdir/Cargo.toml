@@ -1,0 +1,19 @@
+[package]
+name = "test_with_tempdir"
+version = "0.1.0"
+authors = ["Jean SIMARD <woshilapin@tuziwo.info>"]
+edition = "2018"
+description = "Inject a temporary directory and provide as an argument to the function"
+keywords = ["macros", "proc_macro", "temp", "test"]
+categories = ["filesystem"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "*"
+quote = "*"
+
+[dependencies.syn]
+version = "*"
+features = ["full"]

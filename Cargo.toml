@@ -1,0 +1,11 @@
+[package]
+name = "test_with_tempdir_tests"
+version = "0.1.0"
+authors = ["Jean SIMARD <woshilapin@tuziwo.info>"]
+edition = "2018"
+
+[dev-dependencies]
+trybuild = "*"
+
+[dependencies]
+test_with_tempdir = { path = "test_with_tempdir" }
