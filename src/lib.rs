@@ -1,41 +1,34 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use proc_macro2::{TokenStream as TokenStream2, TokenTree};
+use proc_macro2::{Ident, Span, TokenStream as TokenStream2, TokenTree};
 use quote::quote;
-use syn::{parse_macro_input, AttributeArgs, DeriveInput};
+use syn::parse_macro_input;
 
 #[proc_macro_attribute]
-pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
-    // let attributes = parse_macro_input!(attributes as AttributeArgs);
+pub fn test_with_tempdir(_attributes: TokenStream, input: TokenStream) -> TokenStream {
     let input_ts = parse_macro_input!(input as TokenStream2);
     let mut token_stream_iter = input_ts.clone().into_iter();
     if let Some(TokenTree::Ident(ident)) = token_stream_iter.next() {
         if ident == "fn" {
             if let Some(TokenTree::Ident(function_ident)) = token_stream_iter.next() {
+                let function_with_tempdir_name = format!("{}_with_tempdir", function_ident);
+                let function_with_tempdir_ident = Ident::new(
+                    &function_with_tempdir_name,
+                    Span::call_site(),
+                );
                 let wrapped = quote! {
                     #[test]
-                    fn wrapped_function() {
+                    fn #function_with_tempdir_ident() {
+                        use temp_testdir::TempDir;
                         #input_ts
-                        let temp_folder = std::path::Path::new("/tmp/314");
-                        // TODO: Create the temporary folder
-                        #function_ident (&temp_folder);
-                        // TODO: Remove the temporary folder
+                        let temp_dir = TempDir::default();
+                        #function_ident (temp_dir.as_ref());
                     }
                 };
                 return wrapped.into();
             }
         }
     }
-    // let function_name = &input_ts.ident;
-    // let wrapped = quote! {
-    //     #input_ts
-    //     //
-    //     // fn wrapped_#function_name() {
-    //     //     dbg!("Bon ben c'est pas mal ici !");
-    //     //     let path = Path::new("/tmp/42");
-    //     //     #function_name(&path)
-    //     // }
-    // };
     input_ts.into()
 }
