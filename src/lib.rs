@@ -7,8 +7,8 @@ use syn::parse_macro_input;
 
 #[proc_macro_attribute]
 pub fn test_with_tempdir(_attributes: TokenStream, input: TokenStream) -> TokenStream {
-    let input_ts = parse_macro_input!(input as TokenStream2);
-    let mut token_stream_iter = input_ts.clone().into_iter();
+    let input = parse_macro_input!(input as TokenStream2);
+    let mut token_stream_iter = input.clone().into_iter();
     if let Some(TokenTree::Ident(ident)) = token_stream_iter.next() {
         if ident == "fn" {
             if let Some(TokenTree::Ident(function_ident)) = token_stream_iter.next() {
@@ -21,7 +21,7 @@ pub fn test_with_tempdir(_attributes: TokenStream, input: TokenStream) -> TokenS
                     #[test]
                     fn #function_with_tempdir_ident() {
                         use temp_testdir::TempDir;
-                        #input_ts
+                        #input
                         let temp_dir = TempDir::default();
                         #function_ident (temp_dir.as_ref());
                     }
@@ -30,5 +30,5 @@ pub fn test_with_tempdir(_attributes: TokenStream, input: TokenStream) -> TokenS
             }
         }
     }
-    input_ts.into()
+    input.into()
 }
