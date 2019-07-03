@@ -15,3 +15,7 @@ proc-macro2 = "*"
 quote = "*"
 syn = { version = "*", features = ["full"] }
 temp_testdir = "*"
+
+[dev-dependencies]
+pretty_assertions = "*"
+trybuild = "*"

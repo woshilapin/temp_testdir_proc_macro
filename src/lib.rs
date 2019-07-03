@@ -13,17 +13,15 @@ pub fn test_with_tempdir(_attributes: TokenStream, input: TokenStream) -> TokenS
         if ident == "fn" {
             if let Some(TokenTree::Ident(function_ident)) = token_stream_iter.next() {
                 let function_with_tempdir_name = format!("{}_with_tempdir", function_ident);
-                let function_with_tempdir_ident = Ident::new(
-                    &function_with_tempdir_name,
-                    Span::call_site(),
-                );
+                let function_with_tempdir_ident =
+                    Ident::new(&function_with_tempdir_name, Span::call_site());
                 let wrapped = quote! {
                     #[test]
                     fn #function_with_tempdir_ident() {
                         use temp_testdir::TempDir;
                         #input
                         let temp_dir = TempDir::default();
-                        #function_ident (temp_dir.as_ref());
+                        #function_ident(&temp_dir);
                     }
                 };
                 return wrapped.into();
