@@ -5,8 +5,12 @@ use proc_macro2::{Ident, Span, TokenStream as TokenStream2, TokenTree};
 use quote::quote;
 use syn::parse_macro_input;
 
+// TODO: Add documentation
 #[proc_macro_attribute]
+// TODO: Add a possinility to ignore test with #[test_with_tempdir(ignore)]
+// TODO: Add a possibility to specify and keep the folder with #[temp_testdir(path = "/tmp/my_folder")]
 pub fn test_with_tempdir(_attributes: TokenStream, input: TokenStream) -> TokenStream {
+    // TODO: Implement parse for my test function
     let input = parse_macro_input!(input as TokenStream2);
     let mut token_stream_iter = input.clone().into_iter();
     if let Some(TokenTree::Ident(ident)) = token_stream_iter.next() {
