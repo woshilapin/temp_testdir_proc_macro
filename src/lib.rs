@@ -3,12 +3,12 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2, TokenTree};
 use quote::quote;
-use syn::{parse_macro_input, AttributeArgs, Meta, NestedMeta};
+use std::path::Path;
+use syn::{parse_macro_input, AttributeArgs, Lit, Meta, NestedMeta};
+use temp_testdir::TempDir;
 
 // TODO: Add documentation
 #[proc_macro_attribute]
-// TODO: Add a possinility to ignore test with #[test_with_tempdir(ignore)]
-// TODO: Add a possibility to specify and keep the folder with #[temp_testdir(path = "/tmp/my_folder")]
 pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
     let attributes = parse_macro_input!(attributes as AttributeArgs);
     println!("List of attributes {}", attributes.len());
@@ -16,15 +16,25 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
     let mut path: Option<String> = None;
     let mut expect_literal = false;
     for attribute in attributes {
+        println!("Parsing an attribute");
         match attribute {
-            NestedMeta::Meta(meta) => match meta {
-                Meta::Word(ident) => {
-                    if ident == "ignore" {
-                        ignore = true
-                    }
+            NestedMeta::Meta(Meta::NameValue(name_value)) => {
+                println!("The attribute is Meta::NameValue");
+                if name_value.ident == "path" {
+                    println!("The attribute is path");
+                    match name_value.lit {
+                        Lit::Str(value) => path = Some(value.value()),
+                        _ => continue,
+                    };
                 }
-                _ => continue,
-            },
+            }
+            NestedMeta::Meta(Meta::Word(ident)) => {
+                println!("The attribute is Meta::Word");
+                if ident == "ignore" {
+                    println!("The attribute is ignore");
+                    ignore = true;
+                }
+            }
             _ => continue,
         }
         let attribute = quote! { attribute };
@@ -50,12 +60,21 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
                 let function_with_tempdir_name = format!("{}_with_tempdir", function_ident);
                 let function_with_tempdir_ident =
                     Ident::new(&function_with_tempdir_name, Span::call_site());
+                let temp_dir = if let Some(path) = path {
+                    quote! {
+                        TempDir::new(#path, true)
+                    }
+                } else {
+                    quote! {
+                        TempDir::default()
+                    }
+                };
                 let wrapped = quote! {
                     #test_macro
                     fn #function_with_tempdir_ident() {
                         use temp_testdir::TempDir;
                         #input
-                        let temp_dir = TempDir::default();
+                        let temp_dir = #temp_dir;
                         #function_ident(&temp_dir);
                     }
                 };

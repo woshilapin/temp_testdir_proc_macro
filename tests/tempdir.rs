@@ -29,3 +29,8 @@ fn write_and_read(path: &Path) {
 fn this_test_is_ignored(_path: &Path) {
     assert!(false);
 }
+
+#[test_with_tempdir(ignore, path = "/tmp/foo")]
+fn this_test_is_ignored_with_path(path: &Path) {
+    assert_eq!(path.to_str().unwrap(), "/tmp/foo");
+}
