@@ -8,23 +8,23 @@ use quote::quote;
 use syn::{parse_macro_input, AttributeArgs, Lit, Meta, NestedMeta};
 
 #[derive(Debug, PartialEq)]
-enum TempDirMacroArgument {
+enum MacroArgument {
     Ignore,
     Path(String),
 }
 
-struct TempDirMacroArgumentIterator {
+struct MacroArgumentIterator {
     iter_nested_meta: IntoIter<NestedMeta>,
 }
 
-impl From<IntoIter<NestedMeta>> for TempDirMacroArgumentIterator {
+impl From<IntoIter<NestedMeta>> for MacroArgumentIterator {
     fn from(iter_nested_meta: IntoIter<NestedMeta>) -> Self {
-        TempDirMacroArgumentIterator { iter_nested_meta }
+        MacroArgumentIterator { iter_nested_meta }
     }
 }
 
-impl Iterator for TempDirMacroArgumentIterator {
-    type Item = TempDirMacroArgument;
+impl Iterator for MacroArgumentIterator {
+    type Item = MacroArgument;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter_nested_meta
@@ -33,7 +33,7 @@ impl Iterator for TempDirMacroArgumentIterator {
                 NestedMeta::Meta(Meta::NameValue(name_value)) => {
                     if name_value.ident == "path" {
                         match name_value.lit {
-                            Lit::Str(value) => Some(TempDirMacroArgument::Path(value.value())),
+                            Lit::Str(value) => Some(MacroArgument::Path(value.value())),
                             _ => None,
                         }
                     } else {
@@ -42,7 +42,7 @@ impl Iterator for TempDirMacroArgumentIterator {
                 }
                 NestedMeta::Meta(Meta::Word(ident)) => {
                     if ident == "ignore" {
-                        Some(TempDirMacroArgument::Ignore)
+                        Some(MacroArgument::Ignore)
                     } else {
                         None
                     }
@@ -137,8 +137,8 @@ mod tests {
             let not_a_valid_arg =
                 NestedMeta::from(Meta::Word(Ident::new("not_valid_arg", Span::call_site())));
             let attribute_args = vec![ignore, not_a_valid_arg];
-            let mut iter = TempDirMacroArgumentIterator::from(attribute_args.into_iter());
-            assert_eq!(iter.next().unwrap(), TempDirMacroArgument::Ignore);
+            let mut iter = MacroArgumentIterator::from(attribute_args.into_iter());
+            assert_eq!(iter.next().unwrap(), MacroArgument::Ignore);
             assert_eq!(iter.next(), None);
         }
     }
