@@ -3,25 +3,19 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2, TokenTree};
 use quote::quote;
-use std::path::Path;
 use syn::{parse_macro_input, AttributeArgs, Lit, Meta, NestedMeta};
-use temp_testdir::TempDir;
 
 // TODO: Add documentation
 #[proc_macro_attribute]
 pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
     let attributes = parse_macro_input!(attributes as AttributeArgs);
-    println!("List of attributes {}", attributes.len());
     let mut ignore = false;
     let mut path: Option<String> = None;
-    let mut expect_literal = false;
+    let mut _expect_literal = false;
     for attribute in attributes {
-        println!("Parsing an attribute");
         match attribute {
             NestedMeta::Meta(Meta::NameValue(name_value)) => {
-                println!("The attribute is Meta::NameValue");
                 if name_value.ident == "path" {
-                    println!("The attribute is path");
                     match name_value.lit {
                         Lit::Str(value) => path = Some(value.value()),
                         _ => continue,
@@ -29,16 +23,12 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
                 }
             }
             NestedMeta::Meta(Meta::Word(ident)) => {
-                println!("The attribute is Meta::Word");
                 if ident == "ignore" {
-                    println!("The attribute is ignore");
                     ignore = true;
                 }
             }
             _ => continue,
         }
-        let attribute = quote! { attribute };
-        dbg!(attribute);
     }
     let test_macro = if ignore {
         quote! {
