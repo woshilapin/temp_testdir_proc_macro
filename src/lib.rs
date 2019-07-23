@@ -3,13 +3,14 @@ extern crate proc_macro;
 
 use alloc::vec::IntoIter;
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span, TokenStream as TokenStream2, TokenTree};
+use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse_macro_input, AttributeArgs, Lit, Meta, NestedMeta};
+use syn::{parse_macro_input, AttributeArgs, ItemFn, Lit, Meta, NestedMeta};
 
 #[derive(Debug, PartialEq)]
 enum MacroArgument {
     Ignore,
+    // TODO: Transform String into AsRef<Path>
     Path(String),
 }
 
@@ -88,38 +89,32 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
         }
     };
     // TODO: Implement parse for my test function
+    let to_parse = input.clone();
     let input = parse_macro_input!(input as TokenStream2);
-    let mut token_stream_iter = input.clone().into_iter();
-    if let Some(TokenTree::Ident(ident)) = token_stream_iter.next() {
-        if ident == "fn" {
-            if let Some(TokenTree::Ident(function_ident)) = token_stream_iter.next() {
-                // TODO: Keep the name of the original function for the wrapper and change the name of the existing function (better for test report)
-                let function_with_tempdir_name = format!("{}_with_tempdir", function_ident);
-                let function_with_tempdir_ident =
-                    Ident::new(&function_with_tempdir_name, Span::call_site());
-                let temp_dir = if let Some(path) = path {
-                    quote! {
-                        TempDir::new(#path, true)
-                    }
-                } else {
-                    quote! {
-                        TempDir::default()
-                    }
-                };
-                let wrapped = quote! {
-                    #test_macro
-                    fn #function_with_tempdir_ident() {
-                        use temp_testdir::TempDir;
-                        #input
-                        let temp_dir = #temp_dir;
-                        #function_ident(&temp_dir);
-                    }
-                };
-                return wrapped.into();
-            }
+    let test_fn = parse_macro_input!(to_parse as ItemFn);
+    let temp_dir = if let Some(path) = path {
+        quote! {
+            TempDir::new(#path, true)
         }
-    }
-    input.into()
+    } else {
+        quote! {
+            TempDir::default()
+        }
+    };
+    // TODO: Keep the name of the original function for the wrapper and change the name of the existing function (better for test report)
+    let function_ident = test_fn.ident.clone();
+    let function_with_tempdir_name = format!("{}_with_tempdir", test_fn.ident);
+    let function_with_tempdir_ident = Ident::new(&function_with_tempdir_name, Span::call_site());
+    let wrapped = quote! {
+        #test_macro
+        fn #function_with_tempdir_ident() {
+            use temp_testdir::TempDir;
+            #input
+            let temp_dir = #temp_dir;
+            #function_ident(&temp_dir);
+        }
+    };
+    return wrapped.into();
 }
 
 #[cfg(test)]
@@ -132,8 +127,7 @@ mod tests {
 
         #[test]
         fn from() {
-            let ignore =
-                NestedMeta::from(Meta::Word(Ident::new("ignore", Span::call_site())));
+            let ignore = NestedMeta::from(Meta::Word(Ident::new("ignore", Span::call_site())));
             let not_a_valid_arg =
                 NestedMeta::from(Meta::Word(Ident::new("not_valid_arg", Span::call_site())));
             let attribute_args = vec![ignore, not_a_valid_arg];
