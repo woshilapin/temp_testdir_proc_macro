@@ -3,7 +3,7 @@ extern crate proc_macro;
 
 use alloc::vec::IntoIter;
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
+use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{parse_macro_input, AttributeArgs, ItemFn, Lit, Meta, NestedMeta};
 
@@ -88,10 +88,6 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
             #[test]
         }
     };
-    // TODO: Implement parse for my test function
-    let to_parse = input.clone();
-    let input = parse_macro_input!(input as TokenStream2);
-    let test_fn = parse_macro_input!(to_parse as ItemFn);
     let temp_dir = if let Some(path) = path {
         quote! {
             TempDir::new(#path, true)
@@ -101,17 +97,20 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
             TempDir::default()
         }
     };
-    // TODO: Keep the name of the original function for the wrapper and change the name of the existing function (better for test report)
-    let function_ident = test_fn.ident.clone();
-    let function_with_tempdir_name = format!("{}_with_tempdir", test_fn.ident);
-    let function_with_tempdir_ident = Ident::new(&function_with_tempdir_name, Span::call_site());
+    let mut test_fn = parse_macro_input!(input as ItemFn);
+    // Wrapping function will keep the existing function name
+    // Existing function will be renamed with a 'wrapped_' prefix
+    let test_function_ident = test_fn.ident.clone();
+    let wrapped_function_name = format!("wrapped_{}", test_function_ident);
+    let wrapped_function_ident = Ident::new(&wrapped_function_name, Span::call_site());
+    test_fn.ident = wrapped_function_ident.clone();
     let wrapped = quote! {
         #test_macro
-        fn #function_with_tempdir_ident() {
+        fn #test_function_ident() {
             use temp_testdir::TempDir;
-            #input
+            #test_fn
             let temp_dir = #temp_dir;
-            #function_ident(&temp_dir);
+            #wrapped_function_ident(&temp_dir);
         }
     };
     return wrapped.into();
