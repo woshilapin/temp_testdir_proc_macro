@@ -20,18 +20,18 @@ impl FromIterator<NestedMeta> for Configuration<String> {
         let mut configuration = Configuration::default();
         for attribute in iter {
             match attribute {
-                NestedMeta::Meta(Meta::NameValue(name_value)) => {
-                    if name_value.ident == "path" {
-                        match name_value.lit {
-                            Lit::Str(value) => configuration.path = Some(value.value()),
+                NestedMeta::Meta(Meta::NameValue(ref name_value)) if name_value.ident == "path" => {
+                    match &name_value.lit {
+                        Lit::Str(value) => configuration.path = Some(value.value()),
+                        Lit::ByteStr(value) => configuration.path = match String::from_utf8(value.value()) {
+                            Ok(v) => Some(v),
                             _ => continue,
-                        };
-                    }
+                        },
+                        _ => continue,
+                    };
                 }
-                NestedMeta::Meta(Meta::Word(ident)) => {
-                    if ident == "ignore" {
-                        configuration.ignore = true;
-                    }
+                NestedMeta::Meta(Meta::Word(ref ident)) if ident == "ignore" => {
+                    configuration.ignore = true;
                 }
                 _ => continue,
             }

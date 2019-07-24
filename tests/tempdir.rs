@@ -1,4 +1,5 @@
 use pretty_assertions::assert_eq;
+use regex::Regex;
 use std::{
     fs::File,
     io::{Read, Write},
@@ -30,7 +31,14 @@ fn this_test_is_ignored(_path: &Path) {
     assert!(false);
 }
 
-#[test_with_tempdir(ignore, path = "/tmp/foo")]
+#[test_with_tempdir(path = "/tmp/foo")]
 fn this_test_is_ignored_with_path(path: &Path) {
-    assert_eq!(path.to_str().unwrap(), "/tmp/foo");
+    let regex = Regex::new("^/tmp/foo").unwrap();
+    assert!(regex.is_match(path.to_str().unwrap()));
+}
+
+#[test_with_tempdir(path = b"/tmp/foo")]
+fn this_test_is_ignored_with_bytes_path(path: &Path) {
+    let regex = Regex::new("^/tmp/bar").unwrap();
+    assert!(regex.is_match(path.to_str().unwrap()));
 }

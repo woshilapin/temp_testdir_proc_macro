@@ -18,4 +18,5 @@ temp_testdir = "*"
 
 [dev-dependencies]
 pretty_assertions = "*"
+regex = "*"
 trybuild = "*"
