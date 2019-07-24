@@ -1,55 +1,42 @@
-extern crate alloc;
 extern crate proc_macro;
 
-use alloc::vec::IntoIter;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
+use std::{iter::FromIterator, path::Path};
 use syn::{parse_macro_input, AttributeArgs, ItemFn, Lit, Meta, NestedMeta};
 
-#[derive(Debug, PartialEq)]
-enum MacroArgument {
-    Ignore,
-    // TODO: Transform String into AsRef<Path>
-    Path(String),
+#[derive(Debug, Default)]
+struct Configuration<P>
+where
+    P: AsRef<Path>,
+{
+    ignore: bool,
+    path: Option<P>,
 }
 
-struct MacroArgumentIterator {
-    iter_nested_meta: IntoIter<NestedMeta>,
-}
-
-impl From<IntoIter<NestedMeta>> for MacroArgumentIterator {
-    fn from(iter_nested_meta: IntoIter<NestedMeta>) -> Self {
-        MacroArgumentIterator { iter_nested_meta }
-    }
-}
-
-impl Iterator for MacroArgumentIterator {
-    type Item = MacroArgument;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter_nested_meta
-            .next()
-            .and_then(|attribute| match attribute {
+impl FromIterator<NestedMeta> for Configuration<String> {
+    fn from_iter<T: IntoIterator<Item = NestedMeta>>(iter: T) -> Self {
+        let mut configuration = Configuration::default();
+        for attribute in iter {
+            match attribute {
                 NestedMeta::Meta(Meta::NameValue(name_value)) => {
                     if name_value.ident == "path" {
                         match name_value.lit {
-                            Lit::Str(value) => Some(MacroArgument::Path(value.value())),
-                            _ => None,
-                        }
-                    } else {
-                        None
+                            Lit::Str(value) => configuration.path = Some(value.value()),
+                            _ => continue,
+                        };
                     }
                 }
                 NestedMeta::Meta(Meta::Word(ident)) => {
                     if ident == "ignore" {
-                        Some(MacroArgument::Ignore)
-                    } else {
-                        None
+                        configuration.ignore = true;
                     }
                 }
-                _ => None,
-            })
+                _ => continue,
+            }
+        }
+        configuration
     }
 }
 
@@ -57,28 +44,9 @@ impl Iterator for MacroArgumentIterator {
 #[proc_macro_attribute]
 pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
     let attributes = parse_macro_input!(attributes as AttributeArgs);
-    let mut ignore = false;
-    let mut path: Option<String> = None;
     let mut _expect_literal = false;
-    for attribute in attributes {
-        match attribute {
-            NestedMeta::Meta(Meta::NameValue(name_value)) => {
-                if name_value.ident == "path" {
-                    match name_value.lit {
-                        Lit::Str(value) => path = Some(value.value()),
-                        _ => continue,
-                    };
-                }
-            }
-            NestedMeta::Meta(Meta::Word(ident)) => {
-                if ident == "ignore" {
-                    ignore = true;
-                }
-            }
-            _ => continue,
-        }
-    }
-    let test_macro = if ignore {
+    let configuration: Configuration<_> = attributes.into_iter().collect();
+    let test_macro = if configuration.ignore {
         quote! {
             #[test]
             #[ignore]
@@ -88,7 +56,7 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
             #[test]
         }
     };
-    let temp_dir = if let Some(path) = path {
+    let temp_dir = if let Some(path) = configuration.path {
         quote! {
             TempDir::new(#path, true)
         }
@@ -114,25 +82,4 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
         }
     };
     return wrapped.into();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod tempdir_macro_argument_iterator {
-        use super::*;
-        use pretty_assertions::assert_eq;
-
-        #[test]
-        fn from() {
-            let ignore = NestedMeta::from(Meta::Word(Ident::new("ignore", Span::call_site())));
-            let not_a_valid_arg =
-                NestedMeta::from(Meta::Word(Ident::new("not_valid_arg", Span::call_site())));
-            let attribute_args = vec![ignore, not_a_valid_arg];
-            let mut iter = MacroArgumentIterator::from(attribute_args.into_iter());
-            assert_eq!(iter.next().unwrap(), MacroArgument::Ignore);
-            assert_eq!(iter.next(), None);
-        }
-    }
 }
