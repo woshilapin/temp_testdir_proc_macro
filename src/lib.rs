@@ -58,11 +58,11 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
     };
     let temp_dir = if let Some(path) = configuration.path {
         quote! {
-            TempDir::new(#path, true)
+            Builder::new().tempdir_in(#path)
         }
     } else {
         quote! {
-            TempDir::default()
+            Builder::new().tempdir()
         }
     };
     let mut test_fn = parse_macro_input!(input as ItemFn);
@@ -75,10 +75,10 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
     let wrapped = quote! {
         #test_macro
         fn #test_function_ident() {
-            use temp_testdir::TempDir;
+            use tempfile::Builder;
             #test_fn
-            let temp_dir = #temp_dir;
-            #wrapped_function_ident(&temp_dir);
+            let temp_dir = #temp_dir.expect("Failed to create a temporary folder");
+            #wrapped_function_ident(&temp_dir.path());
         }
     };
     return wrapped.into();

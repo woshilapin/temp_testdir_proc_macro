@@ -27,18 +27,18 @@ fn write_and_read(path: &Path) {
 }
 
 #[test_with_tempdir(ignore)]
-fn this_test_is_ignored(_path: &Path) {
+fn is_ignored(_path: &Path) {
     assert!(false);
 }
 
-#[test_with_tempdir(path = "/tmp/foo")]
-fn this_test_is_ignored_with_path(path: &Path) {
-    let regex = Regex::new("^/tmp/foo").unwrap();
+#[test_with_tempdir(path = "./tests")]
+fn with_path(path: &Path) {
+    let regex = Regex::new("tests").unwrap();
     assert!(regex.is_match(path.to_str().unwrap()));
 }
 
-#[test_with_tempdir(path = b"/tmp/foo")]
-fn this_test_is_ignored_with_bytes_path(path: &Path) {
-    let regex = Regex::new("^/tmp/bar").unwrap();
+#[test_with_tempdir(path = b"./tests")]
+fn with_bytes_path(path: &Path) {
+    let regex = Regex::new("tests").unwrap();
     assert!(regex.is_match(path.to_str().unwrap()));
 }
