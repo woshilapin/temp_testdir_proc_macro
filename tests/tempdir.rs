@@ -5,15 +5,15 @@ use std::{
     io::{Read, Write},
     path::Path,
 };
-use test_with_tempdir::test_with_tempdir;
+use with_tempdir_procmacro::with_tempdir;
 
-#[test_with_tempdir]
+#[with_tempdir]
 #[test]
 fn path_exists(path: &Path) {
     assert_eq!(path.exists(), true);
 }
 
-#[test_with_tempdir]
+#[with_tempdir]
 #[test]
 fn write_and_read(path: &Path) {
     let file_path = path.join("some_file.txt");
@@ -28,35 +28,35 @@ fn write_and_read(path: &Path) {
     assert_eq!(content, String::from("some content"));
 }
 
-#[test_with_tempdir]
+#[with_tempdir]
 #[test]
 #[ignore]
 fn is_ignored(_path: &Path) {
     assert!(false);
 }
 
-#[test_with_tempdir(path = "./tests")]
+#[with_tempdir(path = "./tests")]
 #[test]
 fn with_path(path: &Path) {
     let regex = Regex::new("tests").unwrap();
     assert!(regex.is_match(path.to_str().unwrap()));
 }
 
-#[test_with_tempdir(path = b"./tests")]
+#[with_tempdir(path = b"./tests")]
 #[test]
 fn with_bytes_path(path: &Path) {
     let regex = Regex::new("tests").unwrap();
     assert!(regex.is_match(path.to_str().unwrap()));
 }
 
-#[test_with_tempdir(path = "/tmp/foo/bar")]
+#[with_tempdir(path = "/tmp/foo/bar")]
 #[test]
 #[should_panic]
 fn with_folder_not_existing_inner(_path: &Path) {
     assert!(true);
 }
 
-#[test_with_tempdir]
+#[with_tempdir]
 #[test]
 #[should_panic]
 fn should_panic(_path: &Path) {

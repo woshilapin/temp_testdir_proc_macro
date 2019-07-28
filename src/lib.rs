@@ -40,7 +40,7 @@ impl FromIterator<NestedMeta> for Configuration<String> {
 
 // TODO: Add documentation
 #[proc_macro_attribute]
-pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
+pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
     let attributes = parse_macro_input!(attributes as AttributeArgs);
     let mut _expect_literal = false;
     let configuration: Configuration<_> = attributes.into_iter().collect();

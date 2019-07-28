@@ -1,5 +1,5 @@
 [package]
-name = "test_with_tempdir"
+name = "with_tempdir_procmacro"
 version = "0.1.0"
 authors = ["Jean SIMARD <woshilapin@tuziwo.info>"]
 edition = "2018"
