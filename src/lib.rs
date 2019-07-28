@@ -2,7 +2,6 @@ extern crate proc_macro;
 
 // TODO: Add fully qualified names everywhere
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
 use quote::quote;
 use std::{iter::FromIterator, path::Path};
 use syn::{parse_macro_input, AttributeArgs, ItemFn, Lit, Meta, NestedMeta};
@@ -61,19 +60,16 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
     let mut test_fn = parse_macro_input!(input as ItemFn);
     // Wrapping function will keep the existing function name
     // Existing function will be renamed with a 'wrapped_' prefix
-    let test_function_ident = test_fn.ident.clone();
-    let wrapped_function_name = format!("wrapped_{}", test_function_ident);
-    let wrapped_function_ident = Ident::new(&wrapped_function_name, Span::call_site());
-    test_fn.ident = wrapped_function_ident.clone();
+    let fn_ident = test_fn.ident.clone();
     let attributes = test_fn.attrs.clone();
     test_fn.attrs = Vec::new();
     let wrapped = quote! {
         #(#attributes)*
-        fn #test_function_ident() {
+        fn #fn_ident() {
             use tempfile::Builder;
             #test_fn
             let temp_dir = #temp_dir.expect("Failed to create a temporary folder");
-            #wrapped_function_ident(&temp_dir.path());
+            #fn_ident(&temp_dir.path());
         }
     };
     return wrapped.into();
