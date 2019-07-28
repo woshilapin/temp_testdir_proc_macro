@@ -28,7 +28,7 @@ fn write_and_read(path: &Path) {
     assert_eq!(content, String::from("some content"));
 }
 
-#[test_with_tempdir(ignore)]
+#[test_with_tempdir]
 #[test]
 #[ignore]
 fn is_ignored(_path: &Path) {

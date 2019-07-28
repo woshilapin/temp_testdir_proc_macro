@@ -11,7 +11,6 @@ struct Configuration<P>
 where
     P: AsRef<Path>,
 {
-    ignore: bool,
     path: Option<P>,
 }
 
@@ -31,9 +30,6 @@ impl FromIterator<NestedMeta> for Configuration<String> {
                         }
                         _ => continue,
                     };
-                }
-                NestedMeta::Meta(Meta::Word(ref ident)) if ident == "ignore" => {
-                    configuration.ignore = true;
                 }
                 _ => continue,
             }
