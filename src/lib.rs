@@ -53,18 +53,24 @@ pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream 
         }
     };
     let mut test_fn = parse_macro_input!(input as ItemFn);
-    // Wrapping function will keep the existing function name
-    // Existing function will be renamed with a 'wrapped_' prefix
     let fn_ident = test_fn.ident.clone();
-    let attributes = test_fn.attrs.clone();
+    let fn_attributes = test_fn.attrs.clone();
     test_fn.attrs = Vec::new();
     let wrapped = quote! {
-        #(#attributes)*
         fn #fn_ident() {
             #test_fn
             let temp_dir = #temp_dir.expect("Failed to create a temporary folder");
             #fn_ident(&temp_dir.path());
         }
     };
-    return wrapped.into();
+    let wrapped: TokenStream = wrapped.into();
+    let mut new_test_fn = parse_macro_input!(wrapped as ItemFn);
+    new_test_fn.attrs = fn_attributes;
+    new_test_fn.vis = test_fn.vis;
+    new_test_fn.constness = test_fn.constness;
+    new_test_fn.asyncness = test_fn.asyncness;
+    new_test_fn.unsafety = test_fn.unsafety;
+    new_test_fn.abi = test_fn.abi;
+    let token_stream = quote! { #new_test_fn };
+    token_stream.into()
 }
