@@ -1,5 +1,6 @@
 extern crate proc_macro;
 
+// TODO: Add fully qualified names everywhere
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
@@ -23,10 +24,12 @@ impl FromIterator<NestedMeta> for Configuration<String> {
                 NestedMeta::Meta(Meta::NameValue(ref name_value)) if name_value.ident == "path" => {
                     match &name_value.lit {
                         Lit::Str(value) => configuration.path = Some(value.value()),
-                        Lit::ByteStr(value) => configuration.path = match String::from_utf8(value.value()) {
-                            Ok(v) => Some(v),
-                            _ => continue,
-                        },
+                        Lit::ByteStr(value) => {
+                            configuration.path = match String::from_utf8(value.value()) {
+                                Ok(v) => Some(v),
+                                _ => continue,
+                            }
+                        }
                         _ => continue,
                     };
                 }
@@ -46,16 +49,6 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
     let attributes = parse_macro_input!(attributes as AttributeArgs);
     let mut _expect_literal = false;
     let configuration: Configuration<_> = attributes.into_iter().collect();
-    let test_macro = if configuration.ignore {
-        quote! {
-            #[test]
-            #[ignore]
-        }
-    } else {
-        quote! {
-            #[test]
-        }
-    };
     let temp_dir = if let Some(path) = configuration.path {
         quote! {
             Builder::new().tempdir_in(#path)
@@ -72,8 +65,10 @@ pub fn test_with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenSt
     let wrapped_function_name = format!("wrapped_{}", test_function_ident);
     let wrapped_function_ident = Ident::new(&wrapped_function_name, Span::call_site());
     test_fn.ident = wrapped_function_ident.clone();
+    let attributes = test_fn.attrs.clone();
+    test_fn.attrs = Vec::new();
     let wrapped = quote! {
-        #test_macro
+        #(#attributes)*
         fn #test_function_ident() {
             use tempfile::Builder;
             #test_fn
