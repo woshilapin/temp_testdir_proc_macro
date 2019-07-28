@@ -1,7 +1,7 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use std::{iter::FromIterator, path::Path};
 use syn::{parse_macro_input, AttributeArgs, ItemFn, Lit, Meta, NestedMeta};
 
@@ -37,13 +37,11 @@ impl FromIterator<NestedMeta> for Configuration<String> {
     }
 }
 
-// TODO: Add documentation
-#[proc_macro_attribute]
-pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
-    let attributes = parse_macro_input!(attributes as AttributeArgs);
-    let mut _expect_literal = false;
-    let configuration: Configuration<_> = attributes.into_iter().collect();
-    let temp_dir = if let Some(path) = configuration.path {
+fn build_tempdir<P>(path: &Option<P>) -> proc_macro2::TokenStream
+where
+    P: AsRef<Path> + ToTokens,
+{
+    if let Some(path) = path {
         quote! {
             tempfile::Builder::new().tempdir_in(#path)
         }
@@ -51,26 +49,40 @@ pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream 
         quote! {
             tempfile::Builder::new().tempdir()
         }
-    };
-    let mut test_fn = parse_macro_input!(input as ItemFn);
-    let fn_ident = test_fn.ident.clone();
-    let fn_attributes = test_fn.attrs.clone();
-    test_fn.attrs = Vec::new();
+    }
+}
+
+fn wrap_function(function: &mut ItemFn, configuration: &Configuration<String>) -> TokenStream {
+    let tempdir = build_tempdir(&configuration.path);
+    let function_ident = function.ident.clone();
+    let function_attributes = function.attrs.clone();
+    function.attrs = Vec::new();
     let wrapped = quote! {
-        fn #fn_ident() {
-            #test_fn
-            let temp_dir = #temp_dir.expect("Failed to create a temporary folder");
-            #fn_ident(&temp_dir.path());
+        fn #function_ident() {
+            #function
+            let temp_dir = #tempdir.expect("Failed to create a temporary folder");
+            #function_ident(&temp_dir.path());
         }
     };
     let wrapped: TokenStream = wrapped.into();
     let mut new_test_fn = parse_macro_input!(wrapped as ItemFn);
-    new_test_fn.attrs = fn_attributes;
-    new_test_fn.vis = test_fn.vis;
-    new_test_fn.constness = test_fn.constness;
-    new_test_fn.asyncness = test_fn.asyncness;
-    new_test_fn.unsafety = test_fn.unsafety;
-    new_test_fn.abi = test_fn.abi;
+    new_test_fn.attrs = function_attributes;
+    new_test_fn.vis = function.vis.clone();
+    new_test_fn.constness = function.constness.clone();
+    new_test_fn.asyncness = function.asyncness.clone();
+    new_test_fn.unsafety = function.unsafety.clone();
+    new_test_fn.abi = function.abi.clone();
     let token_stream = quote! { #new_test_fn };
+    token_stream.into()
+}
+
+// TODO: Add documentation
+#[proc_macro_attribute]
+pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
+    let configuration: Configuration<_> = parse_macro_input!(attributes as AttributeArgs)
+        .into_iter()
+        .collect();
+    let mut test_fn = parse_macro_input!(input as ItemFn);
+    let token_stream = wrap_function(&mut test_fn, &configuration);
     token_stream.into()
 }
