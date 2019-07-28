@@ -1,6 +1,5 @@
 extern crate proc_macro;
 
-// TODO: Add fully qualified names everywhere
 use proc_macro::TokenStream;
 use quote::quote;
 use std::{iter::FromIterator, path::Path};
@@ -46,11 +45,11 @@ pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream 
     let configuration: Configuration<_> = attributes.into_iter().collect();
     let temp_dir = if let Some(path) = configuration.path {
         quote! {
-            Builder::new().tempdir_in(#path)
+            tempfile::Builder::new().tempdir_in(#path)
         }
     } else {
         quote! {
-            Builder::new().tempdir()
+            tempfile::Builder::new().tempdir()
         }
     };
     let mut test_fn = parse_macro_input!(input as ItemFn);
@@ -62,7 +61,6 @@ pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream 
     let wrapped = quote! {
         #(#attributes)*
         fn #fn_ident() {
-            use tempfile::Builder;
             #test_fn
             let temp_dir = #temp_dir.expect("Failed to create a temporary folder");
             #fn_ident(&temp_dir.path());
