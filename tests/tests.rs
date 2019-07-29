@@ -7,15 +7,19 @@ use std::{
 };
 use with_tempdir_procmacro::with_tempdir;
 
-#[with_tempdir]
 #[test]
-fn path_exists(path: &Path) {
-    assert_eq!(path.exists(), true);
+fn compile_error() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/01-function-with-no-arg.rs");
+    t.compile_fail("tests/02-function-with-wrong-type-arg.rs");
+    t.compile_fail("tests/03-function-with-wrong-ref-type-arg.rs");
+    t.pass("tests/04-has-working-path.rs");
 }
 
 #[with_tempdir]
 #[test]
 fn write_and_read(path: &Path) {
+    assert_eq!(path.exists(), true);
     let file_path = path.join("some_file.txt");
     let mut file = File::create(&file_path).expect("Failed to create the file");
     file.write_fmt(format_args!("some content"))

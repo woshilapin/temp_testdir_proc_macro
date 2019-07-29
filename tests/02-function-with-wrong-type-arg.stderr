@@ -1,0 +1,5 @@
+error: First argument of the function must be a reference on type `std::path::Path`
+ --> $DIR/02-function-with-wrong-type-arg.rs:4:17
+  |
+4 | fn no_arg_fn(s: String) {
+  |                 ^^^^^^

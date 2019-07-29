@@ -6,6 +6,11 @@ edition = "2018"
 description = "Inject a temporary directory and provide as an argument to the function"
 keywords = ["macros", "proc_macro", "temp", "test"]
 categories = ["filesystem"]
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/tests.rs"
 
 [lib]
 proc-macro = true

@@ -1,0 +1,5 @@
+error: Function must take one argument of type `&std::path::Path`
+ --> $DIR/01-function-with-no-arg.rs:4:4
+  |
+4 | fn no_arg_fn() {
+  |    ^^^^^^^^^
