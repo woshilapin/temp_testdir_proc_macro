@@ -16,12 +16,12 @@ path = "tests/tests.rs"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "*"
-quote = "*"
-syn = { version = "*", features = ["extra-traits"] }
-tempfile = "*"
+proc-macro2 = "0.4"
+quote = "0.6"
+syn = { version = "0.15", features = ["extra-traits"] }
+tempfile = "3"
 
 [dev-dependencies]
-pretty_assertions = "*"
-regex = "*"
-trybuild = "*"
+pretty_assertions = "0.6"
+regex = "1"
+trybuild = "1"
