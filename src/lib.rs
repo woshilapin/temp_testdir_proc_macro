@@ -1,3 +1,18 @@
+#![doc(html_playground_url = "https://play.rust-lang.org/")]
+//! This crate provide the [`with_tempdir`] macro.
+//!
+//! ```
+//! use with_tempdir_procmacro::with_tempdir;
+//!
+//! #[with_tempdir(path = "/tmp/foo")]
+//! #[test]
+//! fn my_test(path: &Path) {
+//!   let file_path = path.join("some_file.txt");
+//!   let mut file = File::create(&file_path).expect("Failed to create the file");
+//! }
+//! ```
+//!
+//! Read the documentation of [`with_tempdir`] macro to know more.
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
@@ -135,7 +150,61 @@ fn wrap_function(function: &mut ItemFn, configuration: &Configuration<String>) -
     token_stream.into()
 }
 
-// TODO: Add documentation
+/// The macro `with_tempdir` is providing you an easy way
+/// to inject temporary folders in your test functions.
+///
+/// The macro will inject a reference on a [Path] in your function.
+/// You can then write files to this newly created folder.
+/// And don't worry, it's going to be cleaned up once the test is done.
+///
+/// The macro is using the crate [tempfile](https://crates.io/crates/tempfile)
+/// behind the scene which will clean up the folder on [Drop]. If you want to
+/// know more about the guarantees that [tempfile] is giving, read more on
+/// documentation of the [crate](https://docs.rs/tempfile/3.1.0/tempfile/).
+///
+/// # How to use it
+/// Below is the most simple example to use the macro.
+/// ```
+/// # use with_tempdir_procmacro::with_tempdir;
+/// #[with_tempdir]
+/// #[test]
+/// fn my_test(path: &Path) {
+///   let file_path = path.join("some_file.txt");
+///   let mut file = File::create(&file_path).expect("Failed to create the file");
+/// }
+/// ```
+///
+/// If you want to control where the temporary directory is going to be created,
+/// you can use the `path` argument of the macro
+/// ```
+/// # use with_tempdir_procmacro::with_tempdir;
+/// #[with_tempdir(path = "/tmp/foo")]
+/// #[test]
+/// #[should_panic]
+/// fn my_test(path: &Path) {
+///   let file_path = path.join("some_file.txt");
+///   let mut file = File::create(&file_path).expect("Failed to create the file");
+///   assert!(false);
+/// }
+/// ```
+///
+/// And that's about it!
+///
+/// # Warning
+/// Due to how the `#[test]` is a little specific, the order of the macros above
+/// the function are important: `#[with_tempdir]` must be before `#[test]`.
+///
+/// For example, the following code will not compile
+/// ```ignore,compile_fail
+/// # use with_tempdir_procmacro::with_tempdir;
+/// #[test]
+/// #[with_tempdir]
+/// fn my_test(path: &Path) {
+///   let file_path = path.join("some_file.txt");
+///   let mut file = File::create(&file_path).expect("Failed to create the file");
+///   assert!(false);
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream {
     let configuration: Configuration<_> = parse_macro_input!(attributes as AttributeArgs)
