@@ -1,15 +1,27 @@
+dist: bionic
 language: rust
+
+addons:
+    apt:
+        packages:
+            - libcurl4-openssl-dev
+            - libelf-dev
+            - libdw-dev
+            - cmake
+            - gcc
+            - binutils-dev
+            - libiberty-dev
 
 matrix:
     allow_failures:
         - rust: nightly
-        - rust: stable
-          name: clippy
     include:
         - rust: stable
         - rust: beta
         - rust: nightly
-        - rust: stable
+jobs:
+        - stage: precheck
+          rust: stable
           name: format
           script:
               - rustup component add rustfmt
@@ -19,3 +31,22 @@ matrix:
           script:
               - rustup component add clippy
               - cargo clippy
+        - stage: build
+          name: build
+          script:
+              - cargo build
+        - stage: test
+          name: test
+          script:
+              - cargo test
+        - stage: deploy
+          rust: stable
+          name: documentation
+          script:
+              - cargo doc
+              - if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == "stable" && "$TRAVIS_JOB_NAME" == "documentation" && "$TRAVIS_PULL_REQUEST" = "false" && "$TRAVIS_BRANCH" == "master" ]]; then
+                    echo "<meta http-equiv=refresh content=0;url=centaurus_core/index.html>" > target/doc/index.html &&
+                    git clone https://github.com/davisp/ghp-import.git &&
+                    ./ghp-import/ghp_import.py --no-jekyll --push --force --message="Documentation upload" --remote="https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git" target/doc &&
+                    echo "Documentation deployed successfully"
+                fi
