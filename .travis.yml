@@ -22,8 +22,7 @@ matrix:
         - rust: nightly
 jobs:
     include:
-        - stage: precheck
-          name: format
+        - name: format
           script:
               - rustup component add rustfmt
               - cargo fmt --all -- --check
