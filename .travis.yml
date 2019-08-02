@@ -20,6 +20,7 @@ matrix:
         - rust: beta
         - rust: nightly
 jobs:
+    include:
         - stage: precheck
           rust: stable
           name: format
