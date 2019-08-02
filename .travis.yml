@@ -32,14 +32,8 @@ jobs:
           script:
               - rustup component add clippy
               - cargo clippy
-        - stage: build
-          name: build
-          script:
-              - cargo build
         - stage: test
           name: test
-          script:
-              - cargo test
         - stage: deploy
           rust: stable
           name: documentation
