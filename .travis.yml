@@ -1,0 +1,21 @@
+language: rust
+
+matrix:
+    allow_failures:
+        - rust: nightly
+        - rust: stable
+          name: clippy
+    include:
+        - rust: stable
+        - rust: beta
+        - rust: nightly
+        - rust: stable
+          name: format
+          script:
+              - rustup component add rustfmt
+              - cargo fmt
+        - rust: stable
+          name: clippy
+          script:
+              - rustup component add clippy
+              - cargo clippy
