@@ -142,9 +142,9 @@ fn wrap_function(function: &mut ItemFn, configuration: &Configuration<String>) -
     let mut new_test_fn = parse_macro_input!(wrapped as ItemFn);
     new_test_fn.attrs = function_attributes;
     new_test_fn.vis = function.vis.clone();
-    new_test_fn.constness = function.constness.clone();
-    new_test_fn.asyncness = function.asyncness.clone();
-    new_test_fn.unsafety = function.unsafety.clone();
+    new_test_fn.constness = function.constness;
+    new_test_fn.asyncness = function.asyncness;
+    new_test_fn.unsafety = function.unsafety;
     new_test_fn.abi = function.abi.clone();
     let token_stream = quote! { #new_test_fn };
     token_stream.into()
@@ -211,6 +211,5 @@ pub fn with_tempdir(attributes: TokenStream, input: TokenStream) -> TokenStream 
         .into_iter()
         .collect();
     let mut test_fn = parse_macro_input!(input as ItemFn);
-    let token_stream = wrap_function(&mut test_fn, &configuration);
-    token_stream.into()
+    wrap_function(&mut test_fn, &configuration)
 }
