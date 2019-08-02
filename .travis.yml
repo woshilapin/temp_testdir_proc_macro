@@ -20,3 +20,14 @@ matrix:
         - rust: stable
         - rust: beta
         - rust: nightly
+jobs:
+    include:
+        - stage: precheck
+          name: format
+          script:
+              - rustup component add rustfmt
+              - cargo fmt --all -- --check
+        - name: clippy
+          script:
+              - rustup component add clippy
+              - cargo clippy
